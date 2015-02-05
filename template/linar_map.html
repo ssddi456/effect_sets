@@ -1,0 +1,64 @@
+<html>
+  <head>
+    <meta charset="UTF8">
+    <style>
+      html,body{
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body{
+        display: flex;
+        justify-content:center;
+        align-items:center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <canvas height="500px" width="500px" id="target"></canvas>
+
+    <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
+
+    <script src="../js/draws.js"></script>
+    <script src="../js/math_utils.js"></script>
+    <script src="../js/pixels.js"></script>
+    <script src="../js/shape_utils.js"></script>
+
+    <script>
+
+      var canvas = document.getElementById('target');
+      var ctx = canvas.getContext('2d');
+      var img = new Image;
+      img.onload=function() {
+        ctx.drawImage(img,
+          0,0,img.width,img.height,
+          0,0,500,500);
+
+        var target = new chip(0,0,50,50);
+        var source = new poly([10,10], [60, 10],
+                              [10,60], [110,60]);
+
+        var target_data = ctx.createImageData(50,50);
+        var source_data = ctx.getImageData(0,0,110,60);
+
+      // grid是点阵，
+      // 不考虑线条穿过一个像素时占据其多少百分比，
+      // 始终填满
+      // 
+      // 将正方形矩阵映射到斜切矩阵时，
+      // 需要计算两条线段，然后再求焦点。
+      // 
+      // 作为目标的两条线段需要用现有的线段的位置
+      // 做变换得出。
+        trans_img_chip( target, source,
+                        target_data, source_data );
+
+        ctx.putImageData(target_data,10,70);
+      };
+      img.src='../imgs/25791422844829123.JPG';
+    </script>
+  </body>
+</html>

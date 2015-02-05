@@ -1,0 +1,85 @@
+<html>
+  <head>
+    <meta charset="UTF8">
+    <style>
+      html,body{
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body{
+        display: flex;
+        justify-content:center;
+        align-items:center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <canvas height="500px" width="500px" id="target"></canvas>
+    <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
+    <script src="../js/draws.js"></script>
+    <script src="../js/math_utils.js"></script>
+    <script src="../js/pixels.js"></script>
+    <script src="../js/shape_utils.js"></script>
+
+    <script>
+      var canvas = document.getElementById('target');
+      var ctx = canvas.getContext('2d');
+      function multi ( n ) {
+        return function( m ) {
+          return m * n;
+        }
+      }
+      var grid = grid_walker(create_grid(11,11),
+                  function( point ) {
+                    return point.map(multi(50));
+                  });
+      
+      draw_grid( ctx, grid );
+      // point [0,1]
+      function trans_func_reverse ( point ) {
+        return 1-point;
+      }
+      function trans_func_reverse_sqrt ( point ) {
+        return Math.sqrt(1-point);
+      }
+      function trans_func_cos( point ) {
+        return Math.cos(0.5*Math.PI*(point));
+      }
+      function trans_func_sin_sq( point ) {
+        return 1- Math.pow(point,3);
+      }
+      // 
+      // 越靠近0缩小的比例越大
+      // 越靠近边缘膨胀的比例越大
+      var multi_500 = multi(500);
+      ctx.strokeStyle='#f00';
+      draw_line(ctx, _.range(0,1.1,0.1)
+        .map(function( pos ) {
+          return [pos,1-trans_func_reverse_sqrt(pos)]
+                  .map(multi_500);
+        }));
+      ctx.strokeStyle='#ff0';
+      draw_line(ctx, _.range(0,1.1,0.1)
+        .map(function( pos ) {
+          return [pos,1-trans_func_reverse(pos)]
+                   .map(multi_500);
+        }));
+      ctx.strokeStyle='#f0f';
+      draw_line(ctx, _.range(0,1.1,0.1)
+        .map(function( pos ) {
+          return [pos,1-trans_func_cos(pos)]
+                   .map(multi_500);
+        }));
+      ctx.strokeStyle='#00f';
+      draw_line(ctx, _.range(0,1.1,0.1)
+        .map(function( pos ) {
+          return [pos,1 - trans_func_sin_sq(pos)]
+                   .map(multi_500);
+        }));
+    </script>
+  </body>
+</html>

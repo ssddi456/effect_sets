@@ -1,0 +1,140 @@
+<html>
+  <head>
+    <meta charset="UTF8">
+    <style>
+      html,body{
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body{
+        display: flex;
+        justify-content:center;
+        align-items:center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <canvas height="500px" width="500px" id="target"></canvas>
+    <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
+    <script>
+      var canvas = document.getElementById('target');
+      var ctx = canvas.getContext('2d');
+      //
+      // 创建一个网格，并反向扭曲，
+      // 用这个扭曲的网格来切分贴图
+      // 
+      function create_grid( n, m ) {
+        return _.range(n+1)
+                .map(function( i ) {
+                  return _.range(m+1).map(function(j) {
+                    return [j,i];
+                  });
+                });
+      }
+      function grid_walker(grid,walker) {
+        return grid.map(function( line, i, lines ) {
+          return line.map(function( point, j ) {
+            return walker( point, line, j, i );
+          });
+        });
+      }
+
+      var grid_size = 50, padding = 10;
+      function grid_to_view ( grid ) {
+        return grid_walker(grid,
+          function( point ) {
+            return  point.map(function( p ) {
+                      return padding + p * grid_size;
+                    });
+          });
+      }
+      function get_dis(a,b) {
+        return Math.pow(a[0] - b[0],2) +
+              Math.pow(a[1] - b[1],2)
+      }
+      // 
+      // 向中心收缩
+      // 
+      function distort_grid( grid, distort_range ) {
+        var last= grid.slice(-1)[0].slice(-1)[0];
+        var center = [last[0]/2, last[1]/2];
+        return grid_walker( grid, function( point ) {
+          var d_x = point[0] - center[0];
+          var d_y = point[1] - center[1];
+          var dis = Math.pow(d_x,2)+Math.pow(d_y,2);
+          var dis_root = Math.sqrt(dis);
+          if( dis_root > distort_range ){
+            return point.slice(0);
+          }
+
+          var rate = Math.sqrt(1-(distort_range-dis_root)/distort_range);
+
+          return [center[0] + rate * d_x,
+                  center[1] + rate * d_y];
+        });
+      }
+      function distort_grid_fisheye( grid, distortion, radius ) {
+        var last= grid.slice(-1)[0].slice(-1)[0];
+        var center = [last[0]/2, last[1]/2];
+        var k0;
+        
+        k0 = Math.exp(distortion);
+        k0 = k0 / (k0 - 1) * radius;
+        var k1 = distortion / radius;
+
+        return grid_walker( grid, function( point ) {
+          var d_x = point[0] - center[0];
+          var d_y = point[1] - center[1];
+          var dis = Math.pow(d_x,2)+Math.pow(d_y,2);
+          var dis_root = Math.sqrt(dis);
+          if( dis_root >= radius ){
+            return point.slice(0);
+          }
+
+          var rate = k0 * (1 - Math.exp(-dis_root * k1)) / dis_root * .75 + .25;
+
+          return [center[0] + rate * d_x,
+                  center[1] + rate * d_y];
+        });
+      }
+      function draw_grid( ctx, grid, color ) {
+        var view = grid_to_view(grid);
+
+        ctx.beginPath();
+        view.forEach(function( line, idx, lines ) {
+
+          line.forEach(function( point, jdx, points){
+            ctx[ jdx ?'lineTo' :'moveTo']
+              .apply(ctx,point);
+          });
+
+          line.forEach(function( point, jdx, points) {
+            view.forEach(function( line, idx ) {
+              ctx[ idx ?'lineTo' :'moveTo']
+                .apply(ctx,line[jdx]);
+            });
+          });
+
+        });
+        ctx.strokeStyle = color;
+        ctx.stroke();
+      }
+      var base_grid = create_grid(9,9);
+
+      draw_grid(
+        ctx,
+        base_grid,
+        'rgb(0,0,0)');
+
+      draw_grid(
+        ctx, 
+        distort_grid(base_grid,4),
+        'rgba(255,0,0,0.8)');
+
+    </script>
+  </body>
+</html>

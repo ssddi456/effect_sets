@@ -1,0 +1,85 @@
+<html>
+  <head>
+    <meta charset="UTF8">
+    <style>
+      html,body{
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body{
+        display: flex;
+        justify-content:center;
+        align-items:center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <canvas height="500px" width="500px" id="target"></canvas>
+    <canvas height="500px" width="500px" id="target_2"></canvas>
+
+    <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
+
+    <script src="../js/draws.js"></script>
+    <script src="../js/math_utils.js"></script>
+    <script src="../js/pixels.js"></script>
+    <script src="../js/shape_utils.js"></script>
+    <script src="../js/distortions.js"></script>
+
+<script>
+  var canvas = document.getElementById('target');
+  var ctx = canvas.getContext('2d');
+  var ctx_2 = $('#target_2')[0].getContext('2d');
+  var img = new Image;
+  img.onload=function() {
+    ctx.drawImage(img,
+      0,0,img.width,img.height,
+      0,0,500,500);
+
+    var target_data = ctx.createImageData(500,500);
+    var source_data = ctx.getImageData(0,0,500,500);
+    var side_len = 500/20;
+    var target_grid = grid_walker(create_grid(21,21),
+                        function ( point ) {
+                          return [point[0] * side_len,
+                                  point[1] * side_len];
+                        });
+
+    var source_grid = distort_grid_collapse(
+                        target_grid,250);
+    // 
+    // 将完整的扭曲变换转换成网格的线性变换
+    // 
+    new chip(0,0,20,20).async_walk(function( x,y, done ) {
+      console.log( x, y );
+      var start = target_grid[y][x];
+      console.log( 'target:', start );
+      var target_chip = new chip(
+                          start[0],
+                          start[1],
+                          side_len,
+                          side_len
+                        );
+      console.log( 'source:', source_grid[y][x] );
+      var source_chip = new poly(
+                          source_grid[y][x],
+                          source_grid[y][x+1],
+                          source_grid[y+1][x],
+                          source_grid[y+1][x+1]
+                        );
+      trans_img_chip( target_chip, source_chip,
+                      target_data, source_data);
+      ctx_2.putImageData(target_data,0,0);
+      setTimeout(function() {
+        done();
+      },100);
+    });
+  };
+  img.src='../imgs/25791422844829123.JPG';
+</script>
+
+  </body>
+</html>

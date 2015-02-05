@@ -1,0 +1,93 @@
+<html>
+  <head>
+    <meta charset="UTF8">
+    <style>
+      html,body{
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body{
+        display: flex;
+        justify-content:center;
+        align-items:center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <canvas height="500px" width="500px" id="target"></canvas>
+    <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
+    <script>
+      var canvas = document.getElementById('target');
+      var ctx = canvas.getContext('2d');
+      var img = new Image;
+      img.onload=function() {
+        ctx.drawImage(img,
+          0,0,img.width,img.height,
+          0,0,500,500);
+
+        $(canvas)
+          .on( 'mouseenter', add_hook )
+          .on( 'mouseleave', remove_hook );
+      };
+
+      img.src='../imgs/25791422844829123.JPG';
+
+      var patch = $('<canvas height="50px" width="50px" ></canvas>')
+                    .css({
+                      display : 'none',
+                      position: 'absolute',
+                      top : 0,
+                      left: 0
+                    })
+                    .appendTo('body');
+
+      var patch_ctx = patch[0].getContext('2d');
+      var offset = $(canvas).offset();
+
+      patch_ctx.fillRect(0,0,50,50);
+      function follow_mouse ( e ) {
+        patch.css({
+          transform  : 'translate('
+                        + (e.clientX - 25) +'px,'
+                        + (e.clientY - 25) +'px)'
+        });
+      }
+      var show_timer;
+      function hook_move ( e ) {
+        clearTimeout(show_timer);
+        patch.css({ 
+          visibility : 'hidden'
+        });
+        follow_mouse(e);
+
+        var top_l    = e.clientY - 25 + 1 - offset.top;
+        var left_t   = e.clientX - 25 + 1 - offset.left;
+        patch_ctx.drawImage(canvas, 
+          left_t, top_l, 48, 48,
+          1,      1,     48, 48);
+        show_timer = setTimeout(function() {
+          patch.css({ 
+            visibility : 'visible'
+          });
+        });
+      }
+
+      hook_move = _.debounce(hook_move,50);
+      function add_hook( e ){
+        $('body')[0].addEventListener('mousemove',hook_move);
+        patch.show();
+        follow_mouse(e);
+      }
+      function remove_hook(){
+        show_timer= clearTimeout(show_timer);
+        $('body')[0].removeEventListener('mousemove',hook_move);
+        patch.hide();
+      }
+
+    </script>
+  </body>
+</html>
