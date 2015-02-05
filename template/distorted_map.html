@@ -39,44 +39,88 @@
       0,0,img.width,img.height,
       0,0,500,500);
 
-    var target_data = ctx.createImageData(500,500);
-    var source_data = ctx.getImageData(0,0,500,500);
-    var side_len = 500/20;
-    var target_grid = grid_walker(create_grid(21,21),
+    var chip_counts = 20;
+    var source_size = 100;
+    var target_data = ctx.createImageData(
+                        source_size,
+                        source_size);
+    var source_data = ctx.getImageData(
+                        0,
+                        0,
+                        500,
+                        500);
+    var side_len = source_size/chip_counts;
+    var target_grid = grid_walker(
+                        create_grid(chip_counts+1,
+                                    chip_counts+1),
                         function ( point ) {
                           return [point[0] * side_len,
                                   point[1] * side_len];
                         });
 
     var source_grid = distort_grid_collapse(
-                        target_grid,250);
+                        target_grid,
+                        2,
+                        source_size/2);
     // 
     // 将完整的扭曲变换转换成网格的线性变换
     // 
-    new chip(0,0,20,20).async_walk(function( x,y, done ) {
-      console.log( x, y );
-      var start = target_grid[y][x];
-      console.log( 'target:', start );
-      var target_chip = new chip(
-                          start[0],
-                          start[1],
-                          side_len,
-                          side_len
-                        );
-      console.log( 'source:', source_grid[y][x] );
-      var source_chip = new poly(
-                          source_grid[y][x],
-                          source_grid[y][x+1],
-                          source_grid[y+1][x],
-                          source_grid[y+1][x+1]
-                        );
-      trans_img_chip( target_chip, source_chip,
-                      target_data, source_data);
+    function draws ( target_grid, source_grid ) {
+        
+      console.time('distortion');
+      new chip(0,0,chip_counts,chip_counts)
+        .walk(function( x,y ) {
+          // console.log( x, y );
+          var start = target_grid[y][x];
+          // console.log( 'target:', start );
+          var target_chip = new chip(
+                              start[0],
+                              start[1],
+                              side_len,
+                              side_len
+                            );
+          // console.log( 'source:', source_grid[y][x] );
+          var source_chip = new poly(
+                              source_grid[y][x],
+                              source_grid[y][x+1],
+                              source_grid[y+1][x],
+                              source_grid[y+1][x+1]
+                            );
+          trans_img_chip( target_chip, source_chip,
+                          target_data, source_data);
+        });
+      console.timeEnd('distortion');
       ctx_2.putImageData(target_data,0,0);
-      setTimeout(function() {
-        done();
-      },100);
-    });
+    }
+
+    var offset = $('#target').offset();
+    function hook_move ( e ) {
+      var top_l    = e.clientY - source_size/2
+                     - offset.top;
+      var left_t   = e.clientX - source_size/2
+                     - offset.left;
+      var n_source = grid_walker(source_grid,
+                      function( point ) {
+                        return [point[0] + left_t,
+                                point[1] + top_l];  
+                      }); 
+      draws(target_grid,n_source);
+      ctx.drawImage(img,0,0,500,500);
+      draw_grid(ctx,n_source);
+    }
+
+    hook_move = _.debounce(hook_move,30);
+
+    function add_hook( e ){
+      $('body')[0].addEventListener('mousemove',hook_move);
+    }
+
+    function remove_hook(){
+      $('body')[0].removeEventListener('mousemove',hook_move);
+    }
+    $('#target')
+      .on('mouseenter', add_hook)
+      .on('mouseleave', remove_hook);
   };
   img.src='../imgs/25791422844829123.JPG';
 </script>

@@ -49,7 +49,7 @@ chip.prototype.walk = function( walker ) {
     }
   }
 }
-chip.prototype.async_walk = function( walker ) {
+chip.prototype.async_walk = function( walker, done ) {
   var i = 0;
   var j = 0;
   var self = this;
@@ -60,7 +60,7 @@ chip.prototype.async_walk = function( walker ) {
         i ++;
       }
       if( i >= self.y1 ){
-        return;
+        return done && done();
       }
     }
     walker(j,i, next);
