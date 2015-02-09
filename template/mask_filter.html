@@ -19,7 +19,6 @@
 
     <canvas height="500px" width="500px" id="target"></canvas>
     <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
-    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
     
     <script src="../js/draws.js"></script>
     <script src="../js/math_utils.js"></script>
@@ -42,16 +41,21 @@
     var mask_data   = get_img_data(mask,sd_l,sd_l);
     var t_chip = new chip(0,0,sd_l,sd_l);
     var target_data = ctx.createImageData(sd_l,sd_l);
-    var transfer = trans_line([0,1],[0,255]);
+    copy_imgdata(source_data,target_data);
 
     function draw ( frame ) {
+      console.time('start frame');
       t_chip.walk(function( x, y ) {
-        var pixel = get_pixel( source_data, [x,y]);
-        var mask  = get_pixel(mask_data,[x,y])[0];
-        pixel[3] = trans_line([0,255],[frame,255])(mask);
-        set_pixel( target_data, [x,y], pixel );
+        var mask  = get_pixel_2( mask_data, x, y, 0);
+        if( x == 200 && y == 200 && frame == 230 ){
+          debugger
+        }
+        var masked = trans_line_2( 0, 255, 0, frame, 
+                      (mask < 0.8 * frame) ? 0 : mask);
+        set_pixel_2( target_data, x, y, 3, masked );
       });
       ctx.putImageData(target_data,0,0);
+      console.timeEnd('start frame');
     }
 
     var last;
@@ -60,8 +64,11 @@
       var now = Date.now();
       var self = arguments.callee;
       if( (last && (now - last > 30))|| !last ){
+        if( frame > 255 ){
+          return;
+        }
         draw( frame );
-        frame ++;
+        frame += 5;
         last = Date.now();
       }
       requestAnimationFrame(self,canvas);

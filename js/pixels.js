@@ -6,27 +6,73 @@ function get_skips ( w, point ) {
     return point[1] * w * 4 
          + point[0] * 4;
 }
-
-function set_pixel( imgdata, point, pixel ) {
+function get_skips_2( w, x, y ) {
+  return y * w * 4 + x *4;
+}
+function set_pixel( imgdata, point, pos, color ) {
   var w = imgdata.width;
   var skips = get_skips(w, point);
   var data = imgdata.data;
+
+  if( color != undefined ){
+    data[skips + pos] = color;
+    return
+  }
+  pixel = pos;
+  data[skips     ] = pixel[0];
+  data[skips + 1 ] = pixel[1];
+  data[skips + 2 ] = pixel[2];
+  data[skips + 3 ] = pixel[3];
+}
+function set_pixel_2 ( imgdata, x, y, pos, color ) {
+  var w = imgdata.width;
+  var skips = get_skips_2( w, x, y );
+  var data = imgdata.data;
+
+  if( color != undefined ){
+    data[skips + pos] = color;
+    return;
+  }
+  pixel = pos;
   data[skips     ] = pixel[0];
   data[skips + 1 ] = pixel[1];
   data[skips + 2 ] = pixel[2];
   data[skips + 3 ] = pixel[3];
 }
 
-function get_pixel ( imgdata, point ) {
+var temp_pixel = [0,0,0,0];
+temp_pixel.clone = function() {
+  return this.slice(0);
+}
+function get_pixel ( imgdata, point, pos ) {
   var w = imgdata.width;
   var data= imgdata.data;
   var skips = get_skips(w, point);
-  return [
-          data[skips  ],
-          data[skips+1],
-          data[skips+2],
-          data[skips+3]
-        ];
+  if( pos != undefined ){
+    return data[skips + pos];
+  }
+
+  temp_pixel[0] = data[skips  ];
+  temp_pixel[1] = data[skips+1];
+  temp_pixel[2] = data[skips+2];
+  temp_pixel[3] = data[skips+3];
+
+  return temp_pixel;
+}
+function get_pixel_2 ( imgdata, x, y, pos ) {
+  var w = imgdata.width;
+  var data= imgdata.data;
+  var skips = get_skips_2(w, x, y);
+  if( pos != undefined ){
+    return data[skips + pos];
+  }
+
+  temp_pixel[0] = data[skips  ];
+  temp_pixel[1] = data[skips+1];
+  temp_pixel[2] = data[skips+2];
+  temp_pixel[3] = data[skips+3];
+
+  return temp_pixel;
 }
 function trans_pixal( source, source_point,
                       target, target_point) {
@@ -122,16 +168,24 @@ function grid_walker(grid,walker) {
 }
 
 function trans_line ( t, s ) {
-  var s_len = s[1] - s[0];
-  var t_len = t[1] - t[1];
+  var s_s   = s[0];
+  var t_s   = t[0];
+  var s_len = s[1] - s_s;
+  var t_len = t[1] - t_s;
   return function transfer( p ) {
-    return (p - s[1]) * t_len / s_len;
+    return clamp(0,1,(p - s_s)/s_len) * t_len + t_s;
   }
+}
+function trans_line_2 ( x, y, x1, y1, p ) {
+  var s_len = y1 - x1;
+  var t_len = y  - x;
+  return clamp(0,1,(p-x1)/s_len) * t_len + x;
 }
 
 function trans_chip ( t, s ) {
   var last_ry;
   var temp_h;
+  // add cache to horizontal loop
   function cache_h (ry) {
     if( ry == last_ry ){
       return temp_h;
@@ -173,12 +227,16 @@ function trans_img_chip( target_chip, source_chip,
                          target_data, source_data ) {
   var transfer = trans_chip( target_chip, source_chip );
   target_chip.walk(function( x, y ) {
-    // transfer(x,y)
     trans_pixal( source_data, transfer(x,y),
                  target_data, [(0.5 + x) << 0,
                                (0.5 + y) << 0]);
   });
 }
+
+// 
+// 一个简化的pixel by pixel transformer
+// 直接操作imgdata总是性能太差
+// 
 function pixel_multiplier ( chip, imgdata, multiplier) {
   var s_w = imgdata.width;
   chip.walk(function( x, y ) {
@@ -190,4 +248,13 @@ function pixel_multiplier ( chip, imgdata, multiplier) {
     s_data[ t_skips + 2 ] = multiplier(s_data[ s_skips + 2 ], x, y, 2 );
     s_data[ t_skips + 3 ] = multiplier(s_data[ s_skips + 3 ], x, y, 3 );
   });
+}
+
+function copy_imgdata ( source, target ) {
+  var s_data = source.data;
+  var t_data = target.data;
+  var len = s_data.length;
+  for(var i = 0; i< len;i++){
+    t_data[i] = s_data[i];
+  }
 }
