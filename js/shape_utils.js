@@ -27,8 +27,8 @@ function get_line_cross_point ( line_a, line_b ) {
   var fraction= distA_N2 / denominator;  
   var dx= fraction * ny1,  
       dy= -fraction * nx1;  
-  return [ Math.floor(line_a[0][0] + dx),
-           Math.floor(line_a[0][1] + dy)];
+  return [ (0.5 + line_a[0][0] + dx) << 0,
+           (0.5 + line_a[0][1] + dy) << 0];
 }
 
 function bbox ( source ) {

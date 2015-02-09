@@ -1,0 +1,73 @@
+<html>
+  <head>
+    <meta charset="UTF8">
+    <style>
+      html,body{
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      body{
+        display: flex;
+        justify-content:center;
+        align-items:center;
+      }
+    </style>
+  </head>
+  <body>
+
+    <canvas height="500px" width="500px" id="target"></canvas>
+    <script src="http://cdn.staticfile.org/jquery/2.1.1-rc2/jquery.min.js"></script>
+    <script src="http://cdn.staticfile.org/underscore.js/1.7.0/underscore-min.js"></script>
+    
+    <script src="../js/draws.js"></script>
+    <script src="../js/math_utils.js"></script>
+    <script src="../js/pixels.js"></script>
+    <script src="../js/shape_utils.js"></script>
+    <script src="../js/distortions.js"></script>
+    <script src="../js/resources.js"></script>
+
+<script>
+  var canvas = document.getElementById('target');
+  var ctx = canvas.getContext('2d');
+  load_imgs([
+    '../imgs/25791422844829123.JPG',
+    '../imgs/mask.png'
+  ],function( err, imgs ) {
+    var source = imgs[0];
+    var mask = imgs[1];
+    var sd_l = 500;
+    var source_data = get_img_data(source,sd_l,sd_l);
+    var mask_data   = get_img_data(mask,sd_l,sd_l);
+    var t_chip = new chip(0,0,sd_l,sd_l);
+    var target_data = ctx.createImageData(sd_l,sd_l);
+    var transfer = trans_line([0,1],[0,255]);
+
+    function draw ( frame ) {
+      t_chip.walk(function( x, y ) {
+        var pixel = get_pixel( source_data, [x,y]);
+        var mask  = get_pixel(mask_data,[x,y])[0];
+        pixel[3] = trans_line([0,255],[frame,255])(mask);
+        set_pixel( target_data, [x,y], pixel );
+      });
+      ctx.putImageData(target_data,0,0);
+    }
+
+    var last;
+    var frame = 0;
+    requestAnimationFrame(function() {
+      var now = Date.now();
+      var self = arguments.callee;
+      if( (last && (now - last > 30))|| !last ){
+        draw( frame );
+        frame ++;
+        last = Date.now();
+      }
+      requestAnimationFrame(self,canvas);
+    },canvas);
+  });
+</script>
+
+  </body>
+</html>

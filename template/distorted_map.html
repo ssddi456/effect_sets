@@ -35,20 +35,26 @@
   var ctx_2 = $('#target_2')[0].getContext('2d');
   var img = new Image;
   img.onload=function() {
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img,0,0);
+    var source_data = ctx.getImageData( 
+                        0, 0, 
+                        img.width, img.height );
+
+    var thumb_size_x = canvas.width = 500;
+    var thumb_size_y = canvas.height = 500;
+
     ctx.drawImage(img,
       0,0,img.width,img.height,
-      0,0,500,500);
+      0,0,thumb_size_x,thumb_size_y);
 
-    var chip_counts = 20;
-    var source_size = 100;
+    var chip_counts = 5;
+    var source_size = 400;
     var target_data = ctx.createImageData(
                         source_size,
                         source_size);
-    var source_data = ctx.getImageData(
-                        0,
-                        0,
-                        500,
-                        500);
+
     var side_len = source_size/chip_counts;
     var target_grid = grid_walker(
                         create_grid(chip_counts+1,
@@ -94,11 +100,19 @@
     }
 
     var offset = $('#target').offset();
+
+    var r_x = img.width / thumb_size_x;
+    var r_y = img.height / thumb_size_y;
+    
+    var source_size_x = source_size / r_x;
+    var source_size_y = source_size / r_y;
+
     function hook_move ( e ) {
-      var top_l    = e.clientY - source_size/2
-                     - offset.top;
-      var left_t   = e.clientX - source_size/2
-                     - offset.left;
+      var left_t   = (e.clientX - source_size_x/2
+                     - offset.left)* r_x;
+      var top_l    = (e.clientY - source_size_y/2
+                     - offset.top)* r_y;
+
       var n_source = grid_walker(source_grid,
                       function( point ) {
                         return [point[0] + left_t,
@@ -106,7 +120,13 @@
                       }); 
       draws(target_grid,n_source);
       ctx.drawImage(img,0,0,500,500);
-      draw_grid(ctx,n_source);
+      draw_grid(ctx,
+        grid_walker(n_source,
+          function( point ) {
+            return [ point[0]/r_x,
+                     point[1]/r_y]
+          }),
+        'rgba(122,122,255,0.5)');
     }
 
     hook_move = _.debounce(hook_move,30);
@@ -122,7 +142,9 @@
       .on('mouseenter', add_hook)
       .on('mouseleave', remove_hook);
   };
-  img.src='../imgs/25791422844829123.JPG';
+
+
+  img.src = '../imgs/4721104597_a87cf57d04_o.jpg';
 </script>
 
   </body>

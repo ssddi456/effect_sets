@@ -16,6 +16,7 @@ function distort_grid_collapse( grid, distortion, radius ) {
     var dis_r = (radius-dis_root)/radius;
     var rate = Math.pow(1-Math.sin(0.5*Math.PI*(dis_r)),1.8);
 
+    
     return [center[0] + rate * d_x,
             center[1] + rate * d_y];
   });
