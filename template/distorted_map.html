@@ -49,7 +49,7 @@
       0,0,img.width,img.height,
       0,0,thumb_size_x,thumb_size_y);
 
-    var chip_counts = 5;
+    var chip_counts = 20;
     var source_size = 400;
     var target_data = ctx.createImageData(
                         source_size,
@@ -64,7 +64,7 @@
                                   point[1] * side_len];
                         });
 
-    var source_grid = distort_grid_collapse(
+    var source_grid = distort_grid_simple(
                         target_grid,
                         2,
                         source_size/2);
@@ -92,7 +92,7 @@
                               source_grid[y+1][x],
                               source_grid[y+1][x+1]
                             );
-          trans_img_chip( target_chip, source_chip,
+          trans_img_chip_2( target_chip, source_chip,
                           target_data, source_data);
         });
       console.timeEnd('distortion');

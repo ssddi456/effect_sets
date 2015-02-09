@@ -210,22 +210,61 @@ function trans_chip ( t, s ) {
   }
 }
 function trans_chip_no_closure ( t, s ) {
-  var s_tl_x= s.tl[0];
-  return function transfer ( x, y ) {
-    var ry = (y - t.y)/t.h;
-    var rx = (x - t.x)/t.w;
 
-    return get_line_cross_point(
-            [s_tl_x + (s.bl[0] - s_tl_x) * ry,
-             s.tr[1]+ (s.br[1] - s.tr[1]) * ry],
-            [s_tl_x + (s.tr[0] - s_tl_x) * rx,
-             s.bl[1]+ (s.br[1] - s.bl[1]) * rx]);
+  var s_tl_x = s.tl[0];
+  var s_tl_y = s.tl[1];
+
+  var s_tr_x = s.tr[0];
+  var s_tr_y = s.tr[1];
+
+  var s_bl_x = s.bl[0];
+  var s_bl_y = s.bl[1];
+
+  var s_br_x = s.br[0];
+  var s_br_y = s.br[1];
+
+  var s_t_w  = s_tr_x - s_tl_x;
+  var s_r_h  = s_br_y - s_tr_y;
+  var s_l_h  = s_bl_y - s_tl_y;
+  var s_b_w  = s_br_x - s_bl_x;
+
+  var t_x = t.x;
+  var t_w = t.w;
+  var t_y = t.y;
+  var t_h = t.h;
+
+  return function transfer ( x, y ) {
+    var ry = (y - t_y)/t_h;
+    var rx = (x - t_x)/t_w;
+    return  get_line_cross_point_2(
+              s_tl_x + (s_bl_x - s_tl_x) * ry,
+              s_tl_y + (s_bl_y - s_tl_y) * ry,
+
+              s_tr_x + (s_br_x - s_tr_x) * ry,
+              s_tr_y + (s_br_y - s_tr_y) * ry,
+
+              s_tl_x + (s_tr_x - s_tl_x) * rx,
+              s_tl_y + (s_tr_y - s_tl_y) * rx,
+
+              s_bl_x + (s_br_x - s_bl_x) * rx,
+              s_bl_y + (s_br_y - s_bl_y) * rx
+            );
   }
 }
 
 function trans_img_chip( target_chip, source_chip,
                          target_data, source_data ) {
   var transfer = trans_chip( target_chip, source_chip );
+  target_chip.walk(function( x, y ) {
+    trans_pixal( source_data, transfer(x,y),
+                 target_data, [(0.5 + x) << 0,
+                               (0.5 + y) << 0]);
+  });
+}
+
+function trans_img_chip_2( target_chip, source_chip,
+                         target_data, source_data ) {
+  var transfer = trans_chip_no_closure( target_chip, source_chip );
   target_chip.walk(function( x, y ) {
     trans_pixal( source_data, transfer(x,y),
                  target_data, [(0.5 + x) << 0,

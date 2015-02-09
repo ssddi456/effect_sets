@@ -21,6 +21,39 @@ function distort_grid_collapse( grid, distortion, radius ) {
             center[1] + rate * d_y];
   });
 }
+function distort_grid_simple( grid, distortion, radius ) {
+  var last= grid.slice(-1)[0].slice(-1)[0];
+  var center = [last[0]/2, last[1]/2];
+
+  var scaling_size = 0.4;
+  var target_size = 0.9;
+  var scaled_size = scaling_size * scaling_size / target_size;
+  
+  var scale_map = trans_line([0,scaled_size],[0,scaling_size]);
+  var rate_map = trans_line([scaled_size,1],[scaling_size,1]);
+
+  
+  return grid_walker( grid, function( point ) {
+    var d_x = point[0] - center[0];
+    var d_y = point[1] - center[1];
+    var dis = Math.pow(d_x,2)+Math.pow(d_y,2);
+    var dis_root = Math.sqrt(dis);
+    if( dis_root >= radius ){
+      return point.slice(0);
+    }
+
+    var dis_r = dis_root/radius;
+    var rate = 0;
+    if( dis_r > scaling_size ){
+      rate = rate_map(dis_r);
+    } else if( dis_r ){
+      rate = scale_map(dis_r);
+    }
+
+    return [center[0] + rate * d_x,
+            center[1] + rate * d_y];
+  });
+}
 
 function distort_grid_fisheye( grid, distortion, radius ) {
   var last= grid.slice(-1)[0].slice(-1)[0];
